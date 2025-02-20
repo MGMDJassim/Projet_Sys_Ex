@@ -14,13 +14,23 @@ class TaskSystem:
 
 
     def getDependencies(self, nomTache):
+        # retourne la liste des tâches qui doivent être exécuter avant nomTache
         return self.precedence.get(nomTache, [])
 
     def runSeq(self):
-        pass
+        # exécution séquentielle
+        for t in self.tasks:
+            t.run()
+    
 
-    def run():
-        pass
+    def run(self):
+        # exécution parallèle
+        # initialisation des variables partagées
+        for t in self.tasks:
+            for r in t.reads:
+                globals()[r] = None
+            for w in t.writes:
+                globals()[w] = None
 
 def runT1():
     global X
