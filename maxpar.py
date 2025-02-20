@@ -32,15 +32,15 @@ class TaskSystem:
             for w in t.writes:
                 globals()[w] = None
 
-def runT1():
-    global X
-    X = X
+# def runT1():
+#     global X
+#     X = X
 
-def runT2():
-    global Y
-    Y = 2
+# def runT2():
+#     global Y
+#     Y = 2
 
-def runTsomme():
-    global X, Y, Z
-    Z = X + Y
+# def runTsomme():
+#     global X, Y, Z
+#     Z = X + Y
 
