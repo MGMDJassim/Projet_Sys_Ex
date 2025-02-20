@@ -1,9 +1,26 @@
 class Task:
-    def __init__(self, name="", reads=None, writes=None, run=None):
+    def __init__(self, name, reads, writes, run):
         self.name = name
-        self.reads = reads if reads is not None else []
-        self.writes = writes if writes is not None else []
+        self.reads = reads 
+        self.writes = writes
         self.run = run
+
+class TaskSystem:
+    def __init__(self, tasks, precedence):
+        self.tasks = tasks
+        self.precedence = precedence
+        
+
+
+
+    def getDependencies(self, nomTache):
+        return self.precedence.get(nomTache, [])
+
+    def runSeq(self):
+        pass
+
+    def run():
+        pass
 
 def runT1():
     global X
