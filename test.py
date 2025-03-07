@@ -1,0 +1,191 @@
+import threading
+import random
+import time
+import matplotlib.pyplot as plt
+import networkx as nx
+
+# La classe Task représente une tâche avec un nom, les ressources qu'elle lit et écrit, et une fonction pour exécuter la tâche
+
+class Task:
+    def __init__(self, name, reads, writes, run):
+        self.name = name
+        self.reads = reads
+        self.writes = writes
+        self.run = run
+
+# La classe TaskSystem représente un ensemble de tâches avec un graphe de précédence
+
+class TaskSystem:
+    def __init__(self, tasks, precedence):
+        self.tasks = tasks
+        self.precedence = precedence
+        self.X = None
+        self.Y = None
+        self.Z = None
+        self.validate_inputs()
+        self.graph = self.build_graph()
+
+    # Cette fonction valide les entrées fournies lors de la création d'un objet TaskSystem
+    def validate_inputs(self):
+        # Vérification des noms de tâches uniques
+        task_names = [task.name for task in self.tasks]
+        if len(task_names) != len(set(task_names)):
+            raise ValueError("Les noms des tâches doivent être uniques")
+
+        # Vérification de la cohérence des noms de tâches dans le graphe de précédence
+        for task_name in self.precedence.keys():
+            if task_name not in task_names:
+                raise ValueError(
+                    f"Le nom de tâche {task_name} dans le dictionnaire de précédence n'est pas dans la liste des tâches")
+
+        # Vérification de la validité des dépendances de chaque tâche
+        for dependencies in self.precedence.values():
+            for dep in dependencies:
+                if dep not in task_names:
+                    raise ValueError(
+                        f"La dépendance {dep} n'est pas une tâche valide")
+
+    # Cette fonction construit le graphe de précédence à partir des informations fournies
+    def build_graph(self):
+        # Crée un graphe orienté vide
+        G = nx.DiGraph()
+        # Ajoute chaque tâche comme un nœud dans le graphe
+        for task in self.tasks:
+            G.add_node(task.name)
+            # Pour chaque dépendance de la tâche, ajoute un arc dans le graphe
+            for dep in self.precedence[task.name]:
+                G.add_edge(dep, task.name)
+        return G
+
+
+    # Cette fonction retourne la liste des dépendances d'une tâche spécifique
+    def getDependencies(self, task_name):
+        return list(self.precedence.get(task_name, []))
+
+    # Cette fonction exécute les tâches de manière séquentielle en respectant l'ordre topologique
+    def runSeq(self):
+        ordered_tasks = list(nx.topological_sort(self.graph))
+        for task_name in ordered_tasks:
+            task = next(t for t in self.tasks if t.name == task_name)
+            task.run()
+        print(f"Valeurs après exécution séquentielle: X={self.X}, Y={self.Y}, Z={self.Z}")
+
+    # Cette fonction exécute les tâches en parallèle en utilisant des threads
+    def run(self):
+        # Obtient une liste ordonnée des tâches en suivant l'ordre topologique du graphe de précédence
+        ordered_tasks = list(nx.topological_sort(self.graph))
+        threads = []
+        # Pour chaque tâche, créer un thread pour l'exécuter et l'ajouter à la liste de threads
+        for task_name in ordered_tasks:
+            task = next(t for t in self.tasks if t.name == task_name)
+            thread = threading.Thread(target=task.run)
+            thread.start()
+            threads.append(thread)
+
+        # Attendre la fin de l'exécution de tous les threads
+        for thread in threads:
+            thread.join()
+        print(f"Valeurs après exécution parallèle: X={self.X}, Y={self.Y}, Z={self.Z}")
+
+
+    # Cette fonction affiche le graphe de précédence en utilisant networkx et matplotlib
+    def draw(self):
+        pos = nx.spring_layout(self.graph)
+        nx.draw(self.graph, pos, with_labels=True, node_size=2000,
+                node_color="skyblue", font_size=10, font_weight="bold")
+        plt.show()
+
+    # Cette fonction teste le déterminisme du système en exécutant plusieurs fois les tâches
+
+    def detTestRnd(self, num_tests=100):
+
+        for _ in range(num_tests):
+            # Générer des valeurs aléatoires pour les variables X, Y et Z
+            self.X = random.randint(1, 100)
+            self.Y = random.randint(1, 100)
+            self.Z = self.X + self.Y
+
+            # Exécuter les tâches en parallèle avec le premier jeu de valeurs
+            self.run()
+            result1 = (self.X, self.Y, self.Z)
+
+            # Réinitialiser les variables avec les mêmes valeurs aléatoires
+            self.X = random.randint(1, 100)
+            self.Y = random.randint(1, 100)
+            self.Z = self.X + self.Y
+
+            # Exécuter les tâches en parallèle avec le second jeu de valeurs
+            self.run()
+            result2 = (self.X, self.Y, self.Z)
+
+            # Comparer les résultats des deux exécutions parallèles
+            if result1 != result2:
+                print("Le système n'est pas déterministe")
+                return
+        print(f"Aucune indétermination détectée après {num_tests} tests")
+
+    # Cette fonction compare les temps d'exécution en séquentiel et en parallèle
+    def parCost(self):
+        num_runs = 100  # Nombre de fois où chaque exécution est réalisée
+        seq_times = []  # Liste pour stocker les temps d'exécution en séquentiel
+        par_times = []  # Liste pour stocker les temps d'exécution en parallèle
+
+        for _ in range(num_runs):
+            # Mesurer le temps d'exécution en séquentiel
+            start_time = time.perf_counter()
+            self.runSeq()
+            end_time = time.perf_counter()
+            seq_times.append(end_time - start_time)
+
+            # Mesurer le temps d'exécution en parallèle
+            start_time = time.perf_counter()
+            self.run()
+            end_time = time.perf_counter()
+            par_times.append(end_time - start_time)
+
+        # Calculer le temps d'exécution moyen pour chaque méthode
+        avg_seq_time = sum(seq_times) / num_runs
+        avg_par_time = sum(par_times) / num_runs
+
+        # Afficher les temps d'exécution moyens pour chaque méthode
+        print(f"Temps d'exécution moyen en séquentiel : {avg_seq_time:.4f} s")
+        print(f"Temps d'exécution moyen en parallèle : {avg_par_time:.4f} s")
+
+# Fonctions de tâche en dehors de la classe TaskSystem
+
+def runT1(self):
+    self.X = 1
+    # Pour savoir si la fonction detTestRnd() peut détecter si un système n'est pas déterministe
+    # self.X = random.randint(1, 10)
+    print(f"Tâche T1 exécutée: X={self.X}")
+
+def runT2(self):
+    self.Y = 2
+    # self.Y = random.randint(1, 10)
+    print(f"Tâche T2 exécutée: Y={self.Y}")
+
+def runTsomme(self):
+    self.Z = self.X + self.Y
+    print(f"Tâche Tsomme exécutée: Z={self.Z}")
+    
+# Créer des instances de Task
+t1 = Task(name="T1", reads=[], writes=["X"], run=lambda: runT1(task_system))
+t2 = Task(name="T2", reads=[], writes=["Y"], run=lambda: runT2(task_system))
+tsomme = Task(name="Tsomme", reads=["X", "Y"], writes=["Z"], run=lambda: runTsomme(task_system))
+
+# Définir le graphe de précédence
+precedence = {
+    "T1": [],
+    "T2": [],
+    "Tsomme": ["T1", "T2"]
+}
+
+# Créer une instance de TaskSystem
+s1 = TaskSystem(tasks=[t1, t2, tsomme], precedence=precedence)
+
+# Afficher le graphe de précédence
+s1.draw()
+
+# Exécuter les tests
+s1.detTestRnd()
+s1.parCost()
