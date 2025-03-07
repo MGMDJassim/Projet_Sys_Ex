@@ -1,21 +1,25 @@
+import random
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 import threading
-import random
-import time
 
 class Task:
-    def __init__(self, name, reads, writes, run):
+    def __init__(self, name, reads, writes, run_function):
         self.name = name
-        self.reads = reads 
+        self.reads = reads
         self.writes = writes
-        self.run = run
+        self.run_function = run_function
+
+    def run(self):
+        self.run_function()
 
 class TaskSystem:
     def __init__(self, tasks, precedence):
         self.tasks = tasks
         self.precedence = precedence
+        self.validate_inputs()
+        self.graph = self.build_graph()
         
     def getDependencies(self, nomTache):
         # retourne la liste des tâches qui doivent être exécuter avant la tâche
@@ -41,19 +45,6 @@ class TaskSystem:
         for thread in threads:
             thread.join()
 
-    # vérification les entrées des tâches
-    def _valide_input(self):
-        #détection des doublons
-        task_names = set(self.tasks.keys())
-        if len(task_names) != len(self.tasks):
-            raise ValueError("Doublons dans les noms de tâches")
-        
-        #détection des dépendances avec des tâches inexistantes
-        for t in self.tasks:
-            for d in self.tasks[t].reads + self.tasks[t].writes:
-                if d not in task_names:
-                    raise ValueError(f"Tâche {t} dépend de tâche inexistante {d}")
-
     def build_graph(self):
         # Crée un graphe orienté vide
         G = nx.DiGraph()
@@ -64,40 +55,74 @@ class TaskSystem:
             for dep in self.precedence[task.name]:
                 G.add_edge(dep, task.name)
         return G
-    
+
+    def validate_inputs(self):
+        # Vérification des noms de tâches uniques
+        task_names = [task.name for task in self.tasks]
+        if len(task_names) != len(set(task_names)):
+            raise ValueError("Les noms des tâches doivent être uniques")
+
+        # Vérification de la cohérence des noms de tâches dans le graphe de précédence
+        for task_name in self.precedence.keys():
+            if task_name not in task_names:
+                raise ValueError(
+                    f"Le nom de tâche {task_name} dans le dictionnaire de précédence n'est pas dans la liste des tâches")
 
     def draw(self):
         pos = nx.spring_layout(self.graph)
         nx.draw(self.graph, pos, with_labels=True, node_size=2000,
                 node_color="skyblue", font_size=10, font_weight="bold")
         plt.show()
+    
+    # Test randominsé de deterministe
+    def detTestRn(self):
+        num_tests = 1000
+        for _ in range(num_tests):
+            # Générer des valeurs aléatoires pour les variables X, Y et Z
+            self.X = random.randint(1, 100)
+            self.Y = random.randint(1, 100)
+            self.Z = self.X + self.Y
 
+            # Exécuter les tâches en parallèle avec le premier jeu de valeurs
+            self.run()
+            result1 = (self.X, self.Y, self.Z)
 
+            # Réinitialiser les variables avec les mêmes valeurs aléatoires
+            self.X = random.randint(1, 100)
+            self.Y = random.randint(1, 100)
+            self.Z = self.X + self.Y
+
+            # Exécuter les tâches en parallèle avec le second jeu de valeurs
+            self.run()
+            result2 = (self.X, self.Y, self.Z)
+
+            # Comparer les résultats des deux exécutions parallèles
+            if result1 != result2:
+                print("Le système n'est pas déterministe")
+        print(f"Aucune indétermination détectée après {num_tests} tests")
 
 def runT1():
     global X
-    X = X
-
+    X = 1
 def runT2():
     global Y
     Y = 2
-
 def runTsomme():
     global X, Y, Z
     Z = X + Y
 
-T1 = Task("T1", [], ["X"], runT1)
-T2 = Task("T2", [], ["Y"], runT2)
-Tsomme = Task("Tsomme", ["X", "Y"], ["Z"], runTsomme)
+t1 = Task("T1", ["X"], [], runT1)
+t2 = Task("T2", ["Y"], [], runT2)
+tSomme = Task("Somme", ["X", "Y"], ["Z"], runTsomme)
 
 precedence = {
     "T1": [],
-    "T2": [],
-    "Tsomme": ["T1", "T2"]
+    "T3": [],
+    "Somme": ["T1", "T3"]
 }
 
 # Créer une instance de TaskSystem
-task_system = TaskSystem(tasks=[T1, T2, Tsomme], precedence=precedence)
+task_system = TaskSystem(tasks=[t1, t2, tSomme], precedence=precedence)
 
 # Construire le graphe de précédence
 task_system.graph = task_system.build_graph()
