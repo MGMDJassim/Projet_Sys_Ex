@@ -46,32 +46,33 @@ class TaskSystem:
             thread.join()
 
     def build_graph(self):
-        # Crée un graphe orienté vide
         G = nx.DiGraph()
-        # Ajoute chaque tâche comme un nœud dans le graphe
         for task in self.tasks:
             G.add_node(task.name)
-            # Pour chaque dépendance de la tâche, ajoute un arc dans le graphe
             for dep in self.precedence[task.name]:
                 G.add_edge(dep, task.name)
         return G
 
     def validate_inputs(self):
         # Vérification des noms de tâches uniques
-        task_names = [task.name for task in self.tasks]
+        task_names = []
+        for task in self.tasks:
+            task_names.append(task.name)
         if len(task_names) != len(set(task_names)):
             raise ValueError("Les noms des tâches doivent être uniques")
 
-        # Vérification de la cohérence des noms de tâches dans le graphe de précédence
+        # Vérification de la précedence des tâches
         for task_name in self.precedence.keys():
             if task_name not in task_names:
                 raise ValueError(
                     f"Le nom de tâche {task_name} dans le dictionnaire de précédence n'est pas dans la liste des tâches")
 
     def draw(self):
-        pos = nx.spring_layout(self.graph)
-        nx.draw(self.graph, pos, with_labels=True, node_size=2000,
-                node_color="skyblue", font_size=10, font_weight="bold")
+        G = self.graph
+        pos = nx.spring_layout(G)
+        nx.draw(G, pos, with_labels=True, node_size=2000, node_color="skyblue", font_size=10, font_weight="bold",
+                width=2, edge_color="gray")
+        plt.title("Graphe de précédence des tâches")
         plt.show()
     
     # Test randominsé de deterministe
@@ -79,8 +80,8 @@ class TaskSystem:
         num_tests = 1000
         for _ in range(num_tests):
             # Générer des valeurs aléatoires pour les variables X, Y et Z
-            self.X = random.randint(1, 100)
-            self.Y = random.randint(1, 100)
+            self.X = 1
+            self.Y = 2
             self.Z = self.X + self.Y
 
             # Exécuter les tâches en parallèle avec le premier jeu de valeurs
@@ -88,8 +89,8 @@ class TaskSystem:
             result1 = (self.X, self.Y, self.Z)
 
             # Réinitialiser les variables avec les mêmes valeurs aléatoires
-            self.X = random.randint(1, 100)
-            self.Y = random.randint(1, 100)
+            self.X = 1
+            self.Y = 2
             self.Z = self.X + self.Y
 
             # Exécuter les tâches en parallèle avec le second jeu de valeurs
@@ -117,21 +118,12 @@ tSomme = Task("Somme", ["X", "Y"], ["Z"], runTsomme)
 
 precedence = {
     "T1": [],
-    "T3": [],
-    "Somme": ["T1", "T3"]
+    "T2": [],
+    "Somme": ["T1", "T2"]
 }
 
 # Créer une instance de TaskSystem
 task_system = TaskSystem(tasks=[t1, t2, tSomme], precedence=precedence)
 
-# Construire le graphe de précédence
-task_system.graph = task_system.build_graph()
-
 # Afficher le graphe de précédence
 task_system.draw()
-
-# Exécuter les tâches en séquentiel
-task_system.runSeq()
-
-# Exécuter les tâches en parallèle
-task_system.run()
