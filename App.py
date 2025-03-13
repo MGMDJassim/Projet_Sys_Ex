@@ -26,3 +26,5 @@ task_system = TaskSystem(tasks=[t1, t2, tSomme], precedence=precedence)
 
 # Afficher le graphe de précédence
 task_system.parCost()
+
+task_system.draw()
