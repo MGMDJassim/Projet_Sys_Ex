@@ -1,5 +1,6 @@
 from Task import *
 from TaskSystem import *
+import cProfile
 
 def runT1():
     global X
@@ -10,6 +11,12 @@ def runT2():
 def runTsomme():
     global X, Y, Z
     Z = X + Y
+
+def profile_run():
+    cProfile.run('task_system.run()')
+
+def profile_runSeq():
+    cProfile.run('task_system.runSeq()')
 
 t1 = Task("T1", ["X"], [], runT1)
 t2 = Task("T2", ["Y"], [], runT2)
@@ -24,3 +31,5 @@ precedence = {
 # Créer une instance de TaskSystem
 task_system = TaskSystem(tasks=[t1, t2, tSomme], precedence=precedence)
 task_system.parCost()
+profile_run()
+profile_runSeq()

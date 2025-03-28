@@ -3,7 +3,6 @@ import time
 import matplotlib.pyplot as plt
 import networkx as nx
 import threading
-from timeit import timeit
 
 class TaskSystem:
     def __init__(self, tasks, precedence):
@@ -17,7 +16,6 @@ class TaskSystem:
     def runSeq(self):
         for t in self.tasks:
             t.run()
-            time.sleep(0.1)
 
     def run(self):
         # Création d'un sémaphore pour chaque tâche, initialisé à 0
@@ -36,7 +34,6 @@ class TaskSystem:
 
             # Exécuter la tâche
             task.run()
-            time.sleep(0.1)
 
             # Libérer les sémaphores des tâches dépendantes
             for t in self.tasks:
@@ -84,7 +81,7 @@ class TaskSystem:
         print(f"Aucune indétermination détectée après {num_tests} tests")
     
     def parCost(self):
-        num_runs = 10   # Nombre de fois où chaque exécution est réalisée
+        num_runs = 50   # Nombre de fois où chaque exécution est réalisée
         seq_times = []  # Liste pour stocker les temps d'exécution en séquentiel
         par_times = []  # Liste pour stocker les temps d'exécution en parallèle
 
@@ -108,5 +105,5 @@ class TaskSystem:
         avg_par_time = sum(par_times) / num_runs
 
         # Afficher les résultats
-        print(f"Temps moyen en séquentiel après {num_runs} exécutions : {avg_seq_time:.4f} s")
-        print(f"Temps moyen en parallèle après {num_runs} exécutions : {avg_par_time:.4f} s")
+        print(f"Temps moyen en séquentiel après {num_runs} exécutions : {avg_seq_time:.5f} s")
+        print(f"Temps moyen en parallèle après {num_runs} exécutions : {avg_par_time:.5f} s")
