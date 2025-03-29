@@ -1,5 +1,6 @@
 import random
 import time
+from timeit import timeit
 import matplotlib.pyplot as plt
 import networkx as nx
 import threading
@@ -9,37 +10,43 @@ class TaskSystem:
         self.tasks = tasks
         self.precedence = precedence
         self.validate_inputs()
+        self.graph = self.build_graph()
 
     def getDependencies(self, nomTache):
-        return list(self.precedence.get(nomTache, []))
+        """
+        Retourne la liste des dépendances pour une tâche donnée.
+        Si la tâche n'a pas de dépendances, retourne une liste vide.
+        """
+        if nomTache not in self.precedence:
+            raise ValueError(f"La tâche '{nomTache}' n'existe pas dans le dictionnaire de précédence.")
+        return self.precedence.get(nomTache, [])
 
     def runSeq(self):
+        """
+        Exécution en séquentiel des tâches.
+        Chaque tâche est exécutée dans l'ordre défini par le dictionnaire de précédence.
+        """
         for t in self.tasks:
             t.run()
 
     def run(self):
-        # Création d'un sémaphore pour chaque tâche, initialisé à 0
+        task_dependencies = {task.name: self.getDependencies(task.name) for task in self.tasks}
         task_semaphores = {task.name: threading.Semaphore(0) for task in self.tasks}
-
-        # Initialisation des sémaphores pour les tâches sans dépendances
-        for task in self.tasks:
-            if not self.getDependencies(task.name):
-                task_semaphores[task.name].release()
-
-        # Exécution des tâches en respectant les dépendances
-        for task in self.tasks:
-            # Attendre que toutes les dépendances soient terminées
-            for dep in self.getDependencies(task.name):
-                task_semaphores[dep].acquire()
-
-            # Exécuter la tâche
-            task.run()
-
-            # Libérer les sémaphores des tâches dépendantes
-            for t in self.tasks:
-                if task.name in self.getDependencies(t.name):
-                    task_semaphores[t.name].release()
     
+        for task in self.tasks:
+            if not task_dependencies[task.name]:
+                task_semaphores[task.name].release()
+    
+        for task in self.tasks:
+            for dep in task_dependencies[task.name]:
+                task_semaphores[dep].acquire()
+    
+            task.run()
+    
+            for t in self.tasks:
+                if task.name in task_dependencies[t.name]:
+                    task_semaphores[t.name].release()
+
     def build_graph(self):
         G = nx.DiGraph()
         for task in self.tasks:
@@ -55,7 +62,7 @@ class TaskSystem:
         for task_name in self.precedence.keys():
             if task_name not in task_names:
                 raise ValueError(f"Le nom de tâche {task_name} n'est pas dans le dictionnaire de précédence")
-    
+
     def draw(self):
         G = self.graph
         pos = nx.spring_layout(G)
@@ -81,12 +88,11 @@ class TaskSystem:
         print(f"Aucune indétermination détectée après {num_tests} tests")
     
     def parCost(self):
-        num_runs = 50   # Nombre de fois où chaque exécution est réalisée
+        num_runs = 100   # Nombre de fois où chaque exécution est réalisée
         seq_times = []  # Liste pour stocker les temps d'exécution en séquentiel
         par_times = []  # Liste pour stocker les temps d'exécution en parallèle
 
-        # Mesurer les performances
-        print("Début des mesures de performances...")
+        # Mesurer les performances en séquentiel et en parallèle
         for _ in range(num_runs):
             # Mesurer le temps d'exécution en séquentiel
             start_time = time.perf_counter()
@@ -105,5 +111,5 @@ class TaskSystem:
         avg_par_time = sum(par_times) / num_runs
 
         # Afficher les résultats
-        print(f"Temps moyen en séquentiel après {num_runs} exécutions : {avg_seq_time:.5f} s")
-        print(f"Temps moyen en parallèle après {num_runs} exécutions : {avg_par_time:.5f} s")
+        print(f"Temps moyen en séquentiel après {num_runs} exécutions : {avg_seq_time:.6f} s")
+        print(f"Temps moyen en parallèle après {num_runs} exécutions : {avg_par_time:.6f} s")
