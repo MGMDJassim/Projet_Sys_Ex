@@ -1,6 +1,5 @@
 import random
 import time
-from timeit import timeit
 import matplotlib.pyplot as plt
 import networkx as nx
 import threading
@@ -147,4 +146,4 @@ class TaskSystem:
 
         # Afficher les résultats
         print(f"Temps moyen en séquentiel après {num_runs} exécutions : {avg_seq_time:.6f} s")
-        print(f"Temps moyen en parallèle après {num_runs} exécutions : {avg_par_time:.6f} s")
+        print(f"Temps moyen en parallèle  après {num_runs} exécutions : {avg_par_time:.6f} s")
