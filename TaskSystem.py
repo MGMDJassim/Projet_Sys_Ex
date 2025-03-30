@@ -122,6 +122,9 @@ class TaskSystem:
         print(f"Aucune indétermination détectée après {num_tests} tests")
     
     def parCost(self):
+        """
+        Calcule le coût parallèle du système de tâches.
+        """
         num_runs = 10   # Nombre de fois où chaque exécution est réalisée
         seq_times = []  # Liste pour stocker les temps d'exécution en séquentiel
         par_times = []  # Liste pour stocker les temps d'exécution en parallèle
