@@ -84,15 +84,23 @@ class TaskSystem:
         return G
 
     def validate_inputs(self):
-        """
-        Valide les entrées du système de tâches.
-        """
-        task_names = {task.name for task in self.tasks}
-        if len(task_names) != len(self.tasks):
-            raise ValueError("Noms de tâches en double")
+        # Vérification des noms de tâches uniques
+        task_names = [task.name for task in self.tasks]
+        if len(task_names) != len(set(task_names)):
+            raise ValueError("Les noms des tâches doivent être uniques")
+
+        # Vérification de la cohérence des noms de tâches dans le graphe de précédence
         for task_name in self.precedence.keys():
             if task_name not in task_names:
-                raise ValueError(f"Le nom de tâche {task_name} n'est pas dans le dictionnaire de précédence")
+                raise ValueError(
+                    f"Le nom de tâche {task_name} dans le dictionnaire de précédence n'est pas dans la liste des tâches")
+
+        # Vérification de la validité des dépendances de chaque tâche
+        for dependencies in self.precedence.values():
+            for dep in dependencies:
+                if dep not in task_names:
+                    raise ValueError(
+                        f"La dépendance {dep} n'est pas une tâche valide")
 
     def draw(self):
         """"

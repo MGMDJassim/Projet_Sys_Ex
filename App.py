@@ -27,3 +27,4 @@ precedence_parallele = {
 # Créer une instance de TaskSystem
 task_system = TaskSystem(tasks=[t1, t2, tSomme], precedence=precedence_parallele)
 task_system.parCost()
+
